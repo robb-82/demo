@@ -1,0 +1,67 @@
+---
+- name: Install Docker
+  hosts: webservers
+  remote_user: robb
+  become: yes
+  become_user: root
+
+  vars:
+    docker_users:
+      - robb
+    pip_install_packages:
+      - name: docker
+  vars_files:
+    - vars/secrets.yaml
+  
+  roles:
+    - { role: geerlingguy.pip } 
+    - { role: geerlingguy.docker } 
+
+  post_tasks:
+
+    - name: Create webpage dir
+      file:
+        state: directory
+        dest: "/home/robb/webpage"
+      tags: web_config
+
+    - name: Copy webpage
+      template:
+        src: files/webpage/index.j2
+        dest: /home/robb/webpage/index.php
+      tags: web_config
+
+    - name: Create Dockerbuild dir
+      file:
+        state: directory
+        dest: "/home/robb/Dockerbuild"
+      tags: web_config
+
+    - name: Copy Dockerfile
+      copy:
+        src: files/Dockerbuild/Dockerfile
+        dest: /home/robb/Dockerbuild
+      tags: web_config
+
+    - name: Build PHP docker image
+      docker_image:
+        name: webapp-demo
+        build:
+          path: /home/robb/Dockerbuild/
+          pull: yes
+        source: build
+        state: present
+      tags: web_config
+
+    - name: Start web container
+      docker_container:
+        name: webapp-demo
+        image: webapp-demo
+        state: started
+        ports:
+          - "8080:80"
+        volumes:
+          - /home/robb/webpage:/var/www/html
+      tags: web_config
+   
+...

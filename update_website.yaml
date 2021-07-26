@@ -1,0 +1,31 @@
+---
+- name: Update webapp site
+  hosts: webservers
+  remote_user: robb
+  become: yes
+  become_user: root
+
+  vars_files:
+    - vars/secrets.yaml
+  tasks:
+    - name: Create webpage dir
+      file:
+        state: directory
+        dest: "/home/robb/webpage"
+
+    - name: Copy webpage
+      template:
+        src: files/webpage/index.j2
+        dest: /home/robb/webpage/index.php
+
+    - name: Update site in web container
+      docker_container:
+        name: webapp-demo
+        image: webapp-demo
+        state: started
+        ports:
+          - "8080:80"
+        volumes:
+          - /home/robb/webpage:/var/www/html
+
+...

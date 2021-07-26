@@ -1,0 +1,56 @@
+---
+- name: Install DB host
+  hosts: rh8-db
+  remote_user: robb
+  become: yes
+  become_user: root
+
+  vars:
+    mysql_root_password: "{{ mysql_root_pw }}"
+    mysql_databases:
+      - name: webapp_db
+        encoding: utf8 
+        collation: utf8_general_ci
+    mysql_users:
+      - name: robb
+        host: "%"
+        password: "{{ mysql_robb_pw }}"
+        priv: "webapp_db.*:ALL" 
+  vars_files:
+    - vars/secrets.yaml
+  
+  roles:
+    - { role: geerlingguy.mysql } 
+
+  post_tasks:
+    - name: Ensure mysql port is open
+      firewalld:
+        port: 3306/tcp
+        state: enabled
+        immediate: yes
+        permanent: yes
+
+    - name: Check if webapp_table exists
+      community.mysql.mysql_query:
+        login_db: webapp_db
+        query: SHOW TABLES LIKE 'webapp_table'
+      register: table_check
+      tags: add_data
+
+    - name: Create webapp_table
+      community.mysql.mysql_query:
+        login_db: webapp_db
+        query: CREATE TABLE IF NOT EXISTS webapp_table ( name varchar(255), age int(3) )
+      when: table_check.rowcount[0] | int == 0
+      tags: add_data
+
+    - name: Add data to DB
+      community.mysql.mysql_query:
+        login_db: webapp_db
+        query: INSERT INTO webapp_table (name, age) VALUES ('John', 20)
+      when:
+        - add_data is defined
+        - add_data == "yes"
+      tags: add_data
+   
+...

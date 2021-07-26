@@ -1,0 +1,26 @@
+---
+- name: Install HAProxy
+  hosts: rh8-proxy
+  remote_user: robb
+  become: yes
+  become_user: root
+
+  vars:
+    haproxy_backend_servers:
+      - name: rh8-web1
+        address: 10.211.55.9:8080
+      - name: rh8-web2
+        address: 10.211.55.12:8080
+
+  pre_tasks:
+    - name: Open http service
+      firewalld:
+        service: http
+        state: enabled
+        permanent: yes
+        immediate: yes
+
+  roles:
+    - { role: geerlingguy.haproxy } 
+   
+...

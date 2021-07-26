@@ -1,0 +1,85 @@
+---
+- name: Change to maintenance site
+  hosts: webservers
+  remote_user: robb
+  become: yes
+  become_user: root
+
+  tasks:
+    - name: Create webpage dir
+      file:
+        state: directory
+        dest: "/home/robb/maintpage"
+
+    - name: Copy maintenance page
+      copy:
+        src: files/maintpage/index.html
+        dest: /home/robb/maintpage/
+
+    - name: Update site in web container
+      docker_container:
+        name: webapp-demo
+        image: webapp-demo
+        state: started
+        ports:
+          - "8080:80"
+        volumes:
+          - /home/robb/maintpage:/var/www/html
+
+- name: Update DB host
+  hosts: rh8-db
+  remote_user: robb
+  become: yes
+  become_user: root
+
+  tasks:
+    - name: Update packages
+      yum:
+        name: "*"
+        state: latest
+
+    - name: Ensure dnf-utils is installed
+      yum:
+        name: dnf-utils
+        state: latest
+  
+    - name: Check if host needs a reboot
+      command: /usr/bin/needs-restarting -r
+      register: reboot_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Reboot host if required
+      reboot:
+      when: reboot_check.rc == 1   
+
+- name: Change to webapp site
+  hosts: webservers
+  remote_user: robb
+  become: yes
+  become_user: root
+
+  vars_files:
+    - vars/secrets.yaml
+  tasks:
+    - name: Create webpage dir
+      file:
+        state: directory
+        dest: "/home/robb/webpage"
+
+    - name: Copy webpage
+      template:
+        src: files/webpage/index.j2
+        dest: /home/robb/webpage/index.php
+
+    - name: Update site in web container
+      docker_container:
+        name: webapp-demo
+        image: webapp-demo
+        state: started
+        ports:
+          - "8080:80"
+        volumes:
+          - /home/robb/webpage:/var/www/html
+
+...

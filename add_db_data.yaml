@@ -1,0 +1,15 @@
+---
+- name: Add data to DB
+  hosts: rh8-db
+  remote_user: robb
+  become: yes
+  become_user: root
+
+  tasks:
+
+    - name: Add data to DB
+      community.mysql.mysql_query:
+        login_db: webapp_db
+        query: INSERT INTO webapp_table (name, age) VALUES ( "{{ new_name }}" , "{{ new_age }}" )
+   
+...
