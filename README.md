@@ -1,4 +1,4 @@
-Demo to WebApp...\
+Demo to WebApp...
 
 * MySQL VM.
 * Two VMs running apache-php container to connect to the MySQL DB.
