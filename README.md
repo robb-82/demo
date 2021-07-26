@@ -8,7 +8,8 @@ Maintenance playbooks to update the DB and Web hosts.\
 Playbook to add sample data to the DB.\
 Playbook to update the website.
 
-Ansible-galaxy roles used - info in the roles dir.
+Ansible-galaxy roles used - info in the roles dir.\
+Ansible collections required - info in the collections dir.
 
 MySQL passwords (mysql_root, mysql_robb)  to be stored in vars/secrets vault file.
 
